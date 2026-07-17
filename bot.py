@@ -1,24 +1,9 @@
 import telebot
 from telebot import types
 import os
-import threading
-from flask import Flask
 
 TOKEN = '8910906044:AAHFxhSOe3LBudK2V3jayLA6kFx8I18ib4Y'
 bot = telebot.TeleBot(TOKEN, parse_mode='HTML')
-
-# ======= ВЕБ-СЕРВЕР ДЛЯ РЕНДЕРА (ЧТОБЫ НЕ ОТКЛЮЧАЛ) =======
-app = Flask(__name__)
-
-@app.route('/')
-def health():
-    return "OK", 200
-
-def run_web():
-    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 10000)), debug=False, use_reloader=False)
-
-threading.Thread(target=run_web, daemon=True).start()
-# ============================================================
 
 def main_menu():
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
