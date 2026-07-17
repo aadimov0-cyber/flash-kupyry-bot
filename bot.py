@@ -1,15 +1,36 @@
 import telebot
 from telebot import types
+import os
+import threading
+from flask import Flask
 
-TOKEN = '8910906044:AAHFxhSOe3LBudK2V3jayLA6kFx8I18ib4Y'
+# ========== ТОКЕН И НАСТРОЙКИ ==========
+# Рендер сам подставит токен из переменной окружения, если ты её добавил.
+# Если нет — он возьмёт токен, который в коде.
+TOKEN = os.getenv('TOKEN', '8910906044:AAHFxhSOe3LBudK2V3jayLA6kFx8I18ib4Y')
 
 bot = telebot.TeleBot(TOKEN, parse_mode='HTML')
 
-# Словарь для хранения счетчиков команды /terms
+# ========== СЧЁТЧИК ДЛЯ /terms (18 раз) ==========
 user_terms_counter = {}
 
+# ========== ВЕБ-СЕРВЕР ДЛЯ ПИНГА (ЧТОБЫ НЕ ЗАСЫПАЛ) ==========
+app = Flask(__name__)
+
+@app.route('/')
+def health():
+    return "FLASH KUPYRY is alive ✅", 200
+
+def run_flask():
+    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 10000)))
+
+# Запускаем Flask в фоновом потоке
+threading.Thread(target=run_flask, daemon=True).start()
+
+# ========== ГЛАВНОЕ МЕНЮ (ВНИЗУ ЭКРАНА) ==========
 def main_menu():
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+    
     btn1 = types.KeyboardButton("📄 Прайс цен")
     btn2 = types.KeyboardButton("❓ Почему продаем")
     btn3 = types.KeyboardButton("🚕 Такси и клады")
@@ -27,15 +48,17 @@ def main_menu():
     markup.add(btn9)
     return markup
 
+# ========== СТАРТ ==========
 @bot.message_handler(commands=['start'])
 def start(message):
     bot.send_message(
         message.chat.id,
         "👋 FLASH_KUPYRY\n\nВыберите раздел:",
         reply_markup=main_menu(),
-        protect_content=True  # ← ЗАПРЕТ ПЕРЕСЫЛКИ
+        protect_content=True
     )
 
+# ========== КОМАНДА /terms (18 раз подряд) ==========
 @bot.message_handler(commands=['terms'])
 def terms_command(message):
     user_id = message.chat.id
@@ -50,24 +73,25 @@ def terms_command(message):
             user_id,
             "📄 Пользовательское соглашение:\nhttps://telegra.ph/Legal-Terms-FLASH-KUPYRY-2026-07-17",
             reply_markup=main_menu(),
-            protect_content=True  # ← ЗАПРЕТ ПЕРЕСЫЛКИ
+            protect_content=True
         )
         del user_terms_counter[user_id]
 
+# ========== ОБРАБОТЧИК ВСЕХ СООБЩЕНИЙ (КНОПКИ) ==========
 @bot.message_handler(func=lambda message: True)
 def handle_all_messages(message):
     chat_id = message.chat.id
     text = message.text
     user_id = message.chat.id
 
-    # Сброс счетчика для /terms
+    # Сброс счётчика для /terms, если написал что-то другое
     if user_id in user_terms_counter:
         if not text.startswith('/terms'):
             del user_terms_counter[user_id]
 
-    # --- ОБРАБОТКА КНОПОК ---
+    # ========== ПРАЙС ==========
     if text == "📄 Прайс цен":
-        response = """🔥 АКЦИОННЫЙ ПРАЙС НА ФАЛЬШ КУПЮРЫ В 2026 🔥
+        response = """🔥 АКЦИОННЫЙ ПРАЙС НА ЛУЧШИЕ ФАЛЬШ КУПЮРЫ В 2026 🔥
 
 🇺🇦 Гривна UAH
 Платите → Получаете:
@@ -87,6 +111,7 @@ def handle_all_messages(message):
 
 💥 Акция действует ограниченное время!"""
 
+    # ========== ПОЧЕМУ ПРОДАЕМ ==========
     elif text == "❓ Почему продаем":
         response = """📍Почему мы сами не избавляемся от подделок, а продаем их?
 
@@ -108,6 +133,7 @@ def handle_all_messages(message):
 Для заказа обращайтесь к оператору: 👇
 @FLASH_KUPYRY"""
 
+    # ========== ТАКСИ И КЛАДЫ ==========
     elif text == "🚕 Такси и клады":
         response = """🚕 Города в которых делаем клады:
 
@@ -146,6 +172,7 @@ def handle_all_messages(message):
 Свяжитесь с оператором для уточнения деталей 👇
 @FLASH_KUPYRY"""
 
+    # ========== ОТЗЫВЫ ==========
     elif text == "🙌 Отзывы":
         response = """🙌 Отзывы
 
@@ -155,27 +182,30 @@ def handle_all_messages(message):
 
 @FLASH_KUPYRY"""
 
+    # ========== ФОТО ГРИВНЫ ==========
     elif text == "🇺🇦 Фото гривны":
         photos = ['grivna1.jpg', 'grivna2.jpg', 'grivna3.jpg', 'grivna4.jpg']
         for photo_file in photos:
             try:
                 with open(photo_file, 'rb') as f:
-                    bot.send_photo(chat_id, f, protect_content=True)  # ← ЗАПРЕТ ПЕРЕСЫЛКИ
+                    bot.send_photo(chat_id, f, protect_content=True)
             except:
                 pass
         bot.send_message(
             chat_id,
-            "🇺🇦 Фото гривны (сувенирные купюры)",
+            "🇺🇦 Фото гривны (лучшие фальш купюры)",
             reply_markup=main_menu(),
-            protect_content=True  # ← ЗАПРЕТ ПЕРЕСЫЛКИ
+            protect_content=True
         )
         return
 
+    # ========== ФОТО USD ==========
     elif text == "🇺🇸 Фото USD":
         response = """🇺🇸 Фото USD
 
 ⏳ Раздел в разработке. Скоро добавим фото!"""
 
+    # ========== БАНКОВСКИЕ КАРТЫ ==========
     elif text == "💳 Банковские Карты":
         response = """❗ Для удобства и анонимности работы вы можете приобрести у нас банковские карты, оформленные на «дропа» (человека, не имеющего к вам никакого отношения)
 
@@ -202,17 +232,18 @@ def handle_all_messages(message):
                     photo,
                     caption=response,
                     reply_markup=main_menu(),
-                    protect_content=True  # ← ЗАПРЕТ ПЕРЕСЫЛКИ
+                    protect_content=True
                 )
         except:
             bot.send_message(
                 chat_id,
                 response,
                 reply_markup=main_menu(),
-                protect_content=True  # ← ЗАПРЕТ ПЕРЕСЫЛКИ
+                protect_content=True
             )
         return
 
+    # ========== ИНСТРУКЦИЯ ==========
     elif text == "📋 Инструкция по отмыву":
         response = """📋 Инструкция по безопасной работе
 
@@ -220,6 +251,7 @@ def handle_all_messages(message):
 
 @FLASH_KUPYRY"""
 
+    # ========== ЗАКАЗАТЬ ==========
     elif text == "📱 Заказать":
         response = """📱 Для оформления заказа пишите нашему оператору:
 
@@ -230,12 +262,15 @@ def handle_all_messages(message):
     else:
         return
 
+    # Отправляем ответ
     bot.send_message(
         chat_id,
         response,
         reply_markup=main_menu(),
-        protect_content=True  # ← ЗАПРЕТ ПЕРЕСЫЛКИ
+        protect_content=True
     )
 
-print("🚀 Бот FLASH_KUPYRY запущен...")
-bot.infinity_polling()
+# ========== ЗАПУСК БОТА ==========
+if __name__ == '__main__':
+    print("🚀 Бот FLASH_KUPYRY запущен...")
+    bot.infinity_polling()
