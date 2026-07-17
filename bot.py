@@ -1,23 +1,36 @@
 import telebot
 from telebot import types
 import os
+import threading
+from flask import Flask
 
-TOKEN = os.getenv('TOKEN', '8910906044:AAHFxhSOe3LBudK2V3jayLA6kFx8I18ib4Y')
+TOKEN = '8910906044:AAHFxhSOe3LBudK2V3jayLA6kFx8I18ib4Y'
 bot = telebot.TeleBot(TOKEN, parse_mode='HTML')
 
-user_terms_counter = {}
+# ======= ВЕБ-СЕРВЕР ДЛЯ РЕНДЕРА (ЧТОБЫ НЕ ОТКЛЮЧАЛ) =======
+app = Flask(__name__)
+
+@app.route('/')
+def health():
+    return "OK", 200
+
+def run_web():
+    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 10000)), debug=False, use_reloader=False)
+
+threading.Thread(target=run_web, daemon=True).start()
+# ============================================================
 
 def main_menu():
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     btn1 = types.KeyboardButton("📄 Прайс цен")
-    btn2 = types.KeyboardButton("❓ Почему продаем")
+    btn2 = types.KeyboardButton("📱 Заказать")
     btn3 = types.KeyboardButton("🚕 Такси и клады")
     btn4 = types.KeyboardButton("🙌 Отзывы")
     btn5 = types.KeyboardButton("🇺🇦 Фото гривны")
     btn6 = types.KeyboardButton("🇺🇸 Фото USD")
     btn7 = types.KeyboardButton("💳 Банковские Карты")
     btn8 = types.KeyboardButton("📋 Инструкция по отмыву")
-    btn9 = types.KeyboardButton("📱 Заказать")
+    btn9 = types.KeyboardButton("❓ Почему продаем")
     
     markup.add(btn1, btn2)
     markup.add(btn3, btn4)
@@ -34,6 +47,8 @@ def start(message):
         reply_markup=main_menu(),
         protect_content=True
     )
+
+user_terms_counter = {}
 
 @bot.message_handler(commands=['terms'])
 def terms_command(message):
