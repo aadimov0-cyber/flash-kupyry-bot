@@ -1,31 +1,11 @@
 import telebot
 from telebot import types
 import os
-import threading
-from http.server import HTTPServer, BaseHTTPRequestHandler
 
 TOKEN = os.getenv('TOKEN', '8910906044:AAHFxhSOe3LBudK2V3jayLA6kFx8I18ib4Y')
 bot = telebot.TeleBot(TOKEN, parse_mode='HTML')
 
 user_terms_counter = {}
-
-# ========== ПРОСТОЙ HTTP-СЕРВЕР ДЛЯ ПИНГА ==========
-class HealthHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        if self.path == '/':
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(b'FLASH KUPYRY is alive ✅')
-        else:
-            self.send_response(404)
-            self.end_headers()
-
-def run_http_server():
-    server = HTTPServer(('0.0.0.0', int(os.getenv('PORT', 10000))), HealthHandler)
-    server.serve_forever()
-
-# Запускаем HTTP-сервер в фоновом потоке
-threading.Thread(target=run_http_server, daemon=True).start()
 
 def main_menu():
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
